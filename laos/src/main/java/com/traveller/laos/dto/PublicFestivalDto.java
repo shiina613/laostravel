@@ -1,0 +1,20 @@
+package com.traveller.laos.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PublicFestivalDto {
+    private Long id;
+    private String name;
+    private String slug;
+    private String shortDescription;
+    private String province;
+    private String thumbnail;
+    private LocalDate startDate;
+    private LocalDate endDate;
+}

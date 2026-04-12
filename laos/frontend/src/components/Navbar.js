@@ -24,7 +24,7 @@ const Navbar = () => {
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
             <Link to="/" className="text-gray-700 hover:text-blue-600 transition">Trang chủ</Link>
-            <a href="#destinations" className="text-gray-700 hover:text-blue-600 transition">Điểm đến</a>
+            <Link to="/destinations" className="text-gray-700 hover:text-blue-600 transition">Điểm đến</Link>
             <a href="#festivals" className="text-gray-700 hover:text-blue-600 transition">Lễ hội</a>
             <a href="#articles" className="text-gray-700 hover:text-blue-600 transition">Bài viết</a>
             <a href="#" className="text-gray-700 hover:text-blue-600 transition">Yêu thích</a>
@@ -75,7 +75,7 @@ const Navbar = () => {
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 border-t">
             <Link to="/" className="block py-2 text-gray-700 hover:text-blue-600">Trang chủ</Link>
-            <a href="#destinations" className="block py-2 text-gray-700 hover:text-blue-600">Điểm đến</a>
+            <Link to="/destinations" className="block py-2 text-gray-700 hover:text-blue-600">Điểm đến</Link>
             <a href="#festivals" className="block py-2 text-gray-700 hover:text-blue-600">Lễ hội</a>
             <a href="#articles" className="block py-2 text-gray-700 hover:text-blue-600">Bài viết</a>
             <a href="#" className="block py-2 text-gray-700 hover:text-blue-600">Yêu thích</a>

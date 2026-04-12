@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService, categoryService } from '../services/api';
+import AdminLayout from '../components/AdminLayout';
+import DestinationForm from '../components/DestinationForm';
 
 const AdminCreateDestination = () => {
   const navigate = useNavigate();
@@ -8,68 +10,39 @@ const AdminCreateDestination = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    shortDescription: '',
-    description: '',
-    province: '',
-    categoryId: '',
-    status: 'ACTIVE'
-  });
-
+  const [formData, setFormData] = useState({ name: '', slug: '', shortDescription: '', description: '', province: '', categoryId: '', status: 'ACTIVE' });
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
 
-  // Fetch categories
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await categoryService.getAll();
-        setCategories(response.data);
-      } catch (err) {
-        console.error('Lỗi khi tải danh mục:', err);
-      }
-    };
-    fetchCategories();
+    categoryService.getAll().then(r => setCategories(r.data)).catch(console.error);
   }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setThumbnail(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnailPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    setThumbnail(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setThumbnailPreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleImagesChange = (e) => {
     const files = Array.from(e.target.files);
     setImages(files);
-
-    // Preview
     const previews = [];
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
         previews.push(reader.result);
-        if (previews.length === files.length) {
-          setImagePreviews(previews);
-        }
+        if (previews.length === files.length) setImagePreviews([...previews]);
       };
       reader.readAsDataURL(file);
     });
@@ -82,56 +55,24 @@ const AdminCreateDestination = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-
+    setError(''); setSuccess(''); setLoading(true);
     try {
-      // Validate
-      if (!formData.name.trim()) {
-        throw new Error('Tên địa điểm không được để trống');
-      }
-      if (!formData.slug.trim()) {
-        throw new Error('Slug không được để trống');
-      }
-      if (!formData.shortDescription.trim()) {
-        throw new Error('Mô tả ngắn không được để trống');
-      }
-      if (!formData.description.trim()) {
-        throw new Error('Mô tả chi tiết không được để trống');
-      }
-      if (!formData.province.trim()) {
-        throw new Error('Tỉnh/thành không được để trống');
-      }
-      if (!formData.categoryId) {
-        throw new Error('Danh mục không được để trống');
-      }
-      if (!thumbnail) {
-        throw new Error('Ảnh thumbnail là bắt buộc');
-      }
+      if (!formData.name.trim()) throw new Error('Tên địa điểm không được để trống');
+      if (!formData.slug.trim()) throw new Error('Slug không được để trống');
+      if (!formData.shortDescription.trim()) throw new Error('Mô tả ngắn không được để trống');
+      if (!formData.description.trim()) throw new Error('Mô tả chi tiết không được để trống');
+      if (!formData.province.trim()) throw new Error('Tỉnh/thành không được để trống');
+      if (!formData.categoryId) throw new Error('Danh mục không được để trống');
+      if (!thumbnail) throw new Error('Ảnh thumbnail là bắt buộc');
 
-      // Create FormData
-      const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('slug', formData.slug);
-      formDataToSend.append('shortDescription', formData.shortDescription);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('province', formData.province);
-      formDataToSend.append('categoryId', formData.categoryId);
-      formDataToSend.append('status', formData.status);
-      formDataToSend.append('thumbnail', thumbnail);
+      const fd = new FormData();
+      Object.entries(formData).forEach(([k, v]) => fd.append(k, v));
+      fd.append('thumbnail', thumbnail);
+      images.forEach(img => fd.append('images', img));
 
-      // Add images
-      images.forEach((image, index) => {
-        formDataToSend.append('images', image);
-      });
-
-      // Send request
-      const response = await adminService.createDestination(formDataToSend);
+      await adminService.createDestination(fd);
       setSuccess('Thêm địa điểm thành công!');
-      setTimeout(() => {
-        navigate('/admin/destinations');
-      }, 2000);
+      setTimeout(() => navigate('/admin/destinations'), 1500);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Lỗi khi thêm địa điểm');
     } finally {
@@ -140,186 +81,32 @@ const AdminCreateDestination = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-8">Thêm địa điểm du lịch</h1>
-
+    <AdminLayout title="Thêm địa điểm du lịch">
+      <div className="max-w-3xl">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-5 text-sm">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {error}
             </div>
           )}
-
           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg mb-5 text-sm">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               {success}
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Tên địa điểm */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Tên địa điểm *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            {/* Slug */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Slug *</label>
-              <input
-                type="text"
-                name="slug"
-                value={formData.slug}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            {/* Mô tả ngắn */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Mô tả ngắn *</label>
-              <input
-                type="text"
-                name="shortDescription"
-                value={formData.shortDescription}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            {/* Mô tả chi tiết */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Mô tả chi tiết *</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows="5"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              ></textarea>
-            </div>
-
-            {/* Tỉnh/thành */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Tỉnh/thành *</label>
-              <input
-                type="text"
-                name="province"
-                value={formData.province}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            {/* Danh mục */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Danh mục *</label>
-              <select
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">-- Chọn danh mục --</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Trạng thái */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Trạng thái</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="ACTIVE">Hoạt động</option>
-                <option value="INACTIVE">Không hoạt động</option>
-              </select>
-            </div>
-
-            {/* Thumbnail */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Ảnh thumbnail *</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleThumbnailChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                required
-              />
-              {thumbnailPreview && (
-                <div className="mt-4">
-                  <img src={thumbnailPreview} alt="Thumbnail preview" className="h-48 object-cover rounded-lg" />
-                </div>
-              )}
-            </div>
-
-            {/* Ảnh phụ */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Ảnh phụ</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImagesChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              {imagePreviews.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative">
-                      <img src={preview} alt={`Preview ${index}`} className="h-32 w-full object-cover rounded-lg" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50"
-              >
-                {loading ? 'Đang lưu...' : 'Lưu địa điểm'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/admin/destinations')}
-                className="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition"
-              >
-                Quay lại
-              </button>
-            </div>
-          </form>
+          <DestinationForm
+            formData={formData} onInputChange={handleInputChange}
+            thumbnail={thumbnail} thumbnailPreview={thumbnailPreview} onThumbnailChange={handleThumbnailChange}
+            images={images} imagePreviews={imagePreviews} onImagesChange={handleImagesChange} onRemoveImage={removeImage}
+            categories={categories} loading={loading}
+            onSubmit={handleSubmit} onCancel={() => navigate('/admin/destinations')}
+            submitLabel="Lưu địa điểm"
+          />
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

@@ -5,6 +5,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
+import DestinationsPage from './pages/DestinationsPage';
+import DestinationDetailPage from './pages/DestinationDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminCreateDestination from './pages/AdminCreateDestination';
 import AdminEditDestination from './pages/AdminEditDestination';
@@ -19,70 +21,15 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/destinations"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminDestinations />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/destinations/create"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminCreateDestination />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/destinations/edit/:id"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminEditDestination />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/categories/create"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminCreateCategory />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/categories"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminCategories />
-              </ProtectedRoute>
-            }
-          />
-          
+          <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          <Route path="/destinations" element={<DestinationsPage />} />
+          <Route path="/destinations/:slug" element={<DestinationDetailPage />} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="ADMIN"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/destinations" element={<ProtectedRoute requiredRole="ADMIN"><AdminDestinations /></ProtectedRoute>} />
+          <Route path="/admin/destinations/create" element={<ProtectedRoute requiredRole="ADMIN"><AdminCreateDestination /></ProtectedRoute>} />
+          <Route path="/admin/destinations/edit/:id" element={<ProtectedRoute requiredRole="ADMIN"><AdminEditDestination /></ProtectedRoute>} />
+          <Route path="/admin/categories/create" element={<ProtectedRoute requiredRole="ADMIN"><AdminCreateCategory /></ProtectedRoute>} />
+          <Route path="/admin/categories" element={<ProtectedRoute requiredRole="ADMIN"><AdminCategories /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </AuthProvider>

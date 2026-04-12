@@ -50,6 +50,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/categories").permitAll()
+                        .requestMatchers("/api/destinations").permitAll()
+                        .requestMatchers("/api/destinations/**").permitAll()
+                        .requestMatchers("/api/festivals").permitAll()
+                        .requestMatchers("/api/articles").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/user/**").authenticated()

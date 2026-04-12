@@ -1,6 +1,14 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api';
+export const BACKEND_URL = 'http://localhost:8080';
+
+// Resolve image URL: nếu path bắt đầu bằng /uploads thì prepend backend URL
+export const imgUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${BACKEND_URL}${path}`;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -25,6 +33,13 @@ export const userService = {
 
 export const categoryService = {
   getAll: () => api.get('/categories'),
+};
+
+export const publicService = {
+  getDestinations: (limit = 100) => api.get(`/destinations?limit=${limit}`),
+  getDestinationBySlug: (slug) => api.get(`/destinations/${slug}`),
+  getFestivals: (limit = 6) => api.get(`/festivals?limit=${limit}`),
+  getArticles: (limit = 3) => api.get(`/articles?limit=${limit}`),
 };
 
 export const adminService = {

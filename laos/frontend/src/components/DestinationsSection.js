@@ -1,105 +1,79 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { publicService, imgUrl } from '../services/api';
 
 const DestinationsSection = () => {
-  const destinations = [
-    {
-      id: 1,
-      name: 'Luang Prabang',
-      region: 'Tỉnh Luang Prabang',
-      description: 'Thành phố cổ kính với những ngôi chùa vàng, phố cổ và con sông Mekong hùng vĩ',
-      rating: 4.8,
-      image: '/images/destinations/25649e4c394066e9e403e01b8d72e51968bb2aa1f31432d379f0daee26d394e3.avif'
-    },
-    {
-      id: 2,
-      name: 'Vientiane',
-      region: 'Thủ đô Vientiane',
-      description: 'Thủ đô yên tĩnh với những công trình kiến trúc độc đáo và bảo tàng phong phú',
-      rating: 4.5,
-      image: '/images/destinations/27c0e9e21c8f8c2d0a3e2159dec0306f0a87a8025f9a2cfee050a522148798da.avif'
-    },
-    {
-      id: 3,
-      name: 'Wat Xieng Thong',
-      region: 'Luang Prabang',
-      description: 'Ngôi chùa đẹp nhất Lào với kiến trúc Phật giáo truyền thống tuyệt vời',
-      rating: 4.9,
-      image: '/images/destinations/48aec2af0b1b499cbd77ea5fca768b47c120d46057506c8c2ebd9ffb8397645d.avif'
-    },
-    {
-      id: 4,
-      name: 'Thác Kuang Si',
-      region: 'Luang Prabang',
-      description: 'Thác nước tuyệt đẹp với nước xanh ngọc bích, lý tưởng để tắm và chụp ảnh',
-      rating: 4.7,
-      image: '/images/destinations/54143b59dfe18b7758f8d03cb1f5b96f6d9d55d491986785e003c31a43cc4d21.avif'
-    },
-    {
-      id: 5,
-      name: 'Vang Vieng',
-      region: 'Tỉnh Vientiane',
-      description: 'Thị trấn nhỏ xinh đẹp nằm giữa những núi đá vôi, nổi tiếng với hoạt động thể thao mạo hiểm',
-      rating: 4.6,
-      image: '/images/destinations/65e3f29d14c5e92ceb161ad8e01c04bd3f47918eb80f15d9843d5a18c9959d3d.avif'
-    },
-    {
-      id: 6,
-      name: '4000 Đảo',
-      region: 'Tỉnh Champasak',
-      description: 'Quần đảo tuyệt đẹp trên sông Mekong với cảnh sắc thiên nhiên hoang sơ',
-      rating: 4.4,
-      image: '/images/destinations/afc24d314c18fa0eaee65cd4f69f72561f062773680feb7f06fe69d73f4dec70.avif'
-    }
-  ];
+  const [destinations, setDestinations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    publicService.getDestinations(6)
+      .then(r => setDestinations(r.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-16 md:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </section>
+    );
+  }
+
+  if (destinations.length === 0) return null;
 
   return (
     <section id="destinations" className="py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            Điểm đến nổi bật
-          </h2>
-          <p className="text-gray-600 text-lg">
-            Khám phá những địa điểm tuyệt vời nhất ở Lào
-          </p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Điểm đến nổi bật</h2>
+          <p className="text-gray-600 text-lg">Khám phá những địa điểm tuyệt vời nhất ở Lào</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {destinations.map((destination) => (
+          {destinations.slice(0, 6).map((destination) => (
             <div key={destination.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden">
-              {/* Image */}
               <div className="h-48 bg-gray-200 overflow-hidden">
-                <img
-                  src={destination.image}
-                  alt={destination.name}
-                  className="w-full h-full object-cover"
-                />
+                {destination.thumbnail ? (
+                  <img src={imgUrl(destination.thumbnail)} alt={destination.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
               </div>
-
-              {/* Content */}
               <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{destination.name}</h3>
-                <p className="text-sm text-gray-500 mb-3">{destination.region}</p>
-                <p className="text-gray-600 mb-4 line-clamp-2">{destination.description}</p>
-
-                {/* Rating */}
-                <div className="flex items-center mb-4">
-                  <span className="text-yellow-400">★</span>
-                  <span className="ml-2 text-gray-700 font-semibold">{destination.rating}</span>
-                </div>
-
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition">
+                <h3 className="text-xl font-semibold text-gray-800 mb-1">{destination.name}</h3>
+                <p className="text-sm text-gray-500 mb-3">{destination.province}</p>
+                <p className="text-gray-600 mb-4 line-clamp-2">{destination.shortDescription}</p>
+                {destination.categoryName && (
+                  <span className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full mb-4">
+                    {destination.categoryName}
+                  </span>
+                )}
+                <Link
+                  to={`/destinations/${destination.slug}`}
+                  className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
+                >
                   Xem chi tiết
-                </button>
+                </Link>
               </div>
             </div>
           ))}
         </div>
 
         <div className="text-center mt-12">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition">
+          <Link
+            to="/destinations"
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition"
+          >
             Xem tất cả điểm đến
-          </button>
+          </Link>
         </div>
       </div>
     </section>
