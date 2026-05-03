@@ -7,8 +7,8 @@ const DestinationsSection = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicService.getDestinations(6)
-      .then(r => setDestinations(r.data))
+    publicService.getDestinations({ page: 0, size: 6, sortBy: 'createdAt', sortDir: 'desc' })
+      .then(r => setDestinations(r.data?.data?.content || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

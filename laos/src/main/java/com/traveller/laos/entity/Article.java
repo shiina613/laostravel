@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "articles")
@@ -44,9 +43,6 @@ public class Article {
 
     @Column(length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVE'")
     private String status;
-
-    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArticleImage> images;
 
     @PrePersist
     protected void onCreate() {

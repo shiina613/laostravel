@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { publicService, imgUrl } from '../services/api';
 
 const formatDate = (dateStr) => {
@@ -12,8 +13,8 @@ const FestivalsSection = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicService.getFestivals(6)
-      .then(r => setFestivals(r.data))
+    publicService.getFestivals({ page: 0, size: 6 })
+      .then(r => setFestivals(r.data?.data?.content || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -63,9 +64,12 @@ const FestivalsSection = () => {
                   <p className="text-sm text-gray-500 mb-3">📍 {festival.province}</p>
                 )}
                 <p className="text-gray-600 mb-4 line-clamp-2">{festival.shortDescription}</p>
-                <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition">
+                <Link
+                  to={`/festivals/${festival.slug}`}
+                  className="block w-full text-center bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition"
+                >
                   Tìm hiểu thêm
-                </button>
+                </Link>
               </div>
             </div>
           ))}

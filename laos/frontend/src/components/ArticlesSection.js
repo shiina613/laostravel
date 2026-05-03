@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { publicService, imgUrl } from '../services/api';
 
 const formatDate = (dateStr) => {
@@ -12,8 +13,8 @@ const ArticlesSection = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicService.getArticles(3)
-      .then(r => setArticles(r.data))
+    publicService.getArticles({ page: 0, size: 3 })
+      .then(r => setArticles(r.data?.data?.content || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -58,9 +59,12 @@ const ArticlesSection = () => {
                   <p className="text-sm text-gray-500 mb-3">📅 {formatDate(article.createdAt)}</p>
                 )}
                 <p className="text-gray-600 mb-4 line-clamp-2">{article.summary}</p>
-                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition">
+                <Link
+                  to={`/articles/${article.slug}`}
+                  className="block w-full text-center bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition"
+                >
                   Đọc tiếp
-                </button>
+                </Link>
               </div>
             </div>
           ))}

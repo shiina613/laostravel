@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ReviewSection from '../components/ReviewSection';
 import { publicService, imgUrl } from '../services/api';
 
 const DestinationDetailPage = () => {
@@ -118,6 +119,9 @@ const DestinationDetailPage = () => {
                 {destination.description}
               </div>
             </div>
+
+            {/* Reviews */}
+            <ReviewSection targetType="DESTINATION" targetId={destination.id} />
           </div>
 
           {/* Right: Info card */}

@@ -59,8 +59,9 @@ public class AdminDestinationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DestinationListDto>> getAllDestinations() {
-        List<DestinationListDto> destinations = destinationService.getAllDestinations();
+    public ResponseEntity<List<DestinationListDto>> getAllDestinations(
+            @RequestParam(required = false) String province) {
+        List<DestinationListDto> destinations = destinationService.getAllDestinations(province);
         return ResponseEntity.ok(destinations);
     }
 

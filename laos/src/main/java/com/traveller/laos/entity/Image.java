@@ -6,18 +6,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "destination_images")
+@Table(name = "images")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DestinationImage {
+public class Image {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "destination_id", nullable = false)
-    private Destination destination;
+    // DESTINATION | FESTIVAL | ARTICLE
+    @Column(length = 20, nullable = false)
+    private String targetType;
+
+    @Column(nullable = false)
+    private Long targetId;
 
     @Column(length = 255, nullable = false)
     private String imageUrl;
@@ -30,8 +34,6 @@ public class DestinationImage {
 
     @PrePersist
     protected void onCreate() {
-        if (sortOrder == null) {
-            sortOrder = 0;
-        }
+        if (sortOrder == null) sortOrder = 0;
     }
 }

@@ -15,4 +15,5 @@ public class DestinationListDto {
     private String thumbnail;
     private String categoryName;
     private String status;
+    private Integer viewCount;
 }

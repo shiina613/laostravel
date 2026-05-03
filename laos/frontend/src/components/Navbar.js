@@ -25,7 +25,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-8">
             <Link to="/" className="text-gray-700 hover:text-blue-600 transition">Trang chủ</Link>
             <Link to="/destinations" className="text-gray-700 hover:text-blue-600 transition">Điểm đến</Link>
-            <a href="#festivals" className="text-gray-700 hover:text-blue-600 transition">Lễ hội</a>
+            <Link to="/festivals" className="text-gray-700 hover:text-blue-600 transition">Lễ hội</Link>
             <a href="#articles" className="text-gray-700 hover:text-blue-600 transition">Bài viết</a>
             <a href="#" className="text-gray-700 hover:text-blue-600 transition">Yêu thích</a>
           </div>
@@ -35,6 +35,12 @@ const Navbar = () => {
             {user ? (
               <div className="flex items-center gap-4">
                 <span className="text-gray-700">Xin chào, {user.username}</span>
+                <Link
+                  to="/profile"
+                  className="text-blue-600 hover:text-blue-800 font-medium transition"
+                >
+                  Hồ sơ
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
@@ -76,17 +82,25 @@ const Navbar = () => {
           <div className="md:hidden pb-4 border-t">
             <Link to="/" className="block py-2 text-gray-700 hover:text-blue-600">Trang chủ</Link>
             <Link to="/destinations" className="block py-2 text-gray-700 hover:text-blue-600">Điểm đến</Link>
-            <a href="#festivals" className="block py-2 text-gray-700 hover:text-blue-600">Lễ hội</a>
+            <Link to="/festivals" className="block py-2 text-gray-700 hover:text-blue-600">Lễ hội</Link>
             <a href="#articles" className="block py-2 text-gray-700 hover:text-blue-600">Bài viết</a>
             <a href="#" className="block py-2 text-gray-700 hover:text-blue-600">Yêu thích</a>
             <div className="mt-4 flex gap-2">
               {user ? (
-                <button
-                  onClick={handleLogout}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
-                >
-                  Đăng xuất
-                </button>
+                <>
+                  <Link
+                    to="/profile"
+                    className="flex-1 text-center bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg transition"
+                  >
+                    Hồ sơ
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
               ) : (
                 <>
                   <Link

@@ -1,19 +1,30 @@
 package com.traveller.laos.service;
 
+import com.traveller.laos.dto.ApiResponse;
 import com.traveller.laos.dto.CategoryDto;
 import com.traveller.laos.dto.CreateDestinationRequest;
 import com.traveller.laos.dto.CreateDestinationResponse;
 import com.traveller.laos.dto.DestinationImageDto;
 import com.traveller.laos.dto.DestinationListDto;
+import com.traveller.laos.dto.PageResponse;
 import com.traveller.laos.dto.UpdateDestinationRequest;
 import com.traveller.laos.entity.Category;
 import com.traveller.laos.entity.Destination;
-import com.traveller.laos.entity.DestinationImage;
+import com.traveller.laos.entity.Image;
+import com.traveller.laos.exception.BadRequestException;
+import com.traveller.laos.exception.ResourceNotFoundException;
 import com.traveller.laos.repository.CategoryRepository;
-import com.traveller.laos.repository.DestinationImageRepository;
+import com.traveller.laos.repository.ImageRepository;
 import com.traveller.laos.repository.DestinationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,36 +35,35 @@ import java.util.stream.Collectors;
 
 @Service
 public class DestinationService {
+
+    private static final Logger log = LoggerFactory.getLogger(DestinationService.class);
+    private static final String TARGET_TYPE = "DESTINATION";
+
     private final DestinationRepository destinationRepository;
-    private final DestinationImageRepository destinationImageRepository;
+    private final ImageRepository imageRepository;
     private final CategoryRepository categoryRepository;
     private final FileStorageService fileStorageService;
 
     public DestinationService(DestinationRepository destinationRepository,
-                             DestinationImageRepository destinationImageRepository,
-                             CategoryRepository categoryRepository,
-                             FileStorageService fileStorageService) {
+                              ImageRepository imageRepository,
+                              CategoryRepository categoryRepository,
+                              FileStorageService fileStorageService) {
         this.destinationRepository = destinationRepository;
-        this.destinationImageRepository = destinationImageRepository;
+        this.imageRepository = imageRepository;
         this.categoryRepository = categoryRepository;
         this.fileStorageService = fileStorageService;
     }
 
     @Transactional
     public CreateDestinationResponse createDestination(CreateDestinationRequest request) throws IOException {
-        // Validate
         validateCreateRequest(request);
 
-        // Kiểm tra slug không trùng
-        if (destinationRepository.existsBySlug(request.getSlug())) {
-            throw new RuntimeException("Slug đã tồn tại");
-        }
+        if (destinationRepository.existsBySlug(request.getSlug()))
+            throw new BadRequestException("Slug đã tồn tại");
 
-        // Kiểm tra category tồn tại
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục", request.getCategoryId()));
 
-        // Tạo destination trước để lấy id
         Destination destination = new Destination();
         destination.setName(request.getName());
         destination.setSlug(request.getSlug());
@@ -65,57 +75,46 @@ public class DestinationService {
         destination = destinationRepository.save(destination);
 
         try {
-            // Lưu thumbnail
             if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
                 String thumbnailPath = fileStorageService.saveDestinationThumbnail(destination.getId(), request.getThumbnail());
                 destination.setThumbnail(thumbnailPath);
                 destination = destinationRepository.save(destination);
             }
 
-            // Lưu ảnh phụ
             if (request.getImages() != null && request.getImages().length > 0) {
                 int sortOrder = 1;
                 for (MultipartFile imageFile : request.getImages()) {
                     if (imageFile != null && !imageFile.isEmpty()) {
                         String imagePath = fileStorageService.saveDestinationImage(destination.getId(), imageFile);
-                        
-                        DestinationImage destinationImage = new DestinationImage();
-                        destinationImage.setDestination(destination);
-                        destinationImage.setImageUrl(imagePath);
-                        destinationImage.setSortOrder(sortOrder++);
-                        destinationImageRepository.save(destinationImage);
+                        Image img = new Image();
+                        img.setTargetType(TARGET_TYPE);
+                        img.setTargetId(destination.getId());
+                        img.setImageUrl(imagePath);
+                        img.setSortOrder(sortOrder++);
+                        imageRepository.save(img);
                     }
                 }
             }
-
-            // Trả về response
             return mapToResponse(destination);
         } catch (IOException e) {
-            // Xóa destination nếu có lỗi upload
             destinationRepository.delete(destination);
-            throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage());
+            throw e;
         }
     }
 
     @Transactional
     public CreateDestinationResponse updateDestination(Long id, UpdateDestinationRequest request) throws IOException {
-        // Validate
         validateUpdateRequest(request);
 
-        // Tìm destination
         Destination destination = destinationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Địa điểm không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Địa điểm", id));
 
-        // Kiểm tra slug không trùng (ngoại trừ destination hiện tại)
-        if (!destination.getSlug().equals(request.getSlug()) && destinationRepository.existsBySlug(request.getSlug())) {
-            throw new RuntimeException("Slug đã tồn tại");
-        }
+        if (!destination.getSlug().equals(request.getSlug()) && destinationRepository.existsBySlug(request.getSlug()))
+            throw new BadRequestException("Slug đã tồn tại");
 
-        // Kiểm tra category tồn tại
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục", request.getCategoryId()));
 
-        // Cập nhật thông tin
         destination.setName(request.getName());
         destination.setSlug(request.getSlug());
         destination.setShortDescription(request.getShortDescription());
@@ -124,73 +123,106 @@ public class DestinationService {
         destination.setCategory(category);
         destination.setStatus(request.getStatus() != null ? request.getStatus() : "ACTIVE");
 
-        // Cập nhật thumbnail nếu có
         if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
             String thumbnailPath = fileStorageService.saveDestinationThumbnail(destination.getId(), request.getThumbnail());
             destination.setThumbnail(thumbnailPath);
         }
-
         destination = destinationRepository.save(destination);
 
-        // Thêm ảnh phụ nếu có
         if (request.getImages() != null && request.getImages().length > 0) {
-            int sortOrder = destinationImageRepository.findByDestinationIdOrderBySortOrder(id).size() + 1;
+            int sortOrder = imageRepository.findByTargetTypeAndTargetIdOrderBySortOrder(TARGET_TYPE, id).size() + 1;
             for (MultipartFile imageFile : request.getImages()) {
                 if (imageFile != null && !imageFile.isEmpty()) {
                     String imagePath = fileStorageService.saveDestinationImage(destination.getId(), imageFile);
-                    
-                    DestinationImage destinationImage = new DestinationImage();
-                    destinationImage.setDestination(destination);
-                    destinationImage.setImageUrl(imagePath);
-                    destinationImage.setSortOrder(sortOrder++);
-                    destinationImageRepository.save(destinationImage);
+                    Image img = new Image();
+                    img.setTargetType(TARGET_TYPE);
+                    img.setTargetId(destination.getId());
+                    img.setImageUrl(imagePath);
+                    img.setSortOrder(sortOrder++);
+                    imageRepository.save(img);
                 }
             }
         }
-
         return mapToResponse(destination);
     }
 
     @Transactional
     public void deleteDestination(Long id) {
         Destination destination = destinationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Địa điểm không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Địa điểm", id));
 
-        // Xóa ảnh phụ
-        List<DestinationImage> images = destinationImageRepository.findByDestinationIdOrderBySortOrder(id);
-        for (DestinationImage image : images) {
+        List<Image> images = imageRepository.findByTargetTypeAndTargetIdOrderBySortOrder(TARGET_TYPE, id);
+        for (Image image : images) {
             fileStorageService.deleteFile(image.getImageUrl());
-            destinationImageRepository.delete(image);
         }
+        imageRepository.deleteByTargetTypeAndTargetId(TARGET_TYPE, id);
 
-        // Xóa thumbnail
-        if (destination.getThumbnail() != null) {
+        if (destination.getThumbnail() != null)
             fileStorageService.deleteFile(destination.getThumbnail());
-        }
 
-        // Xóa folder
         try {
-            Path destinationPath = Paths.get("uploads/destinations", id.toString());
-            if (Files.exists(destinationPath)) {
-                Files.deleteIfExists(destinationPath);
-            }
-        } catch (IOException e) {
-            // Log error but don't throw
-        }
+            Path destPath = Paths.get("uploads/destinations", id.toString());
+            if (Files.exists(destPath)) Files.deleteIfExists(destPath);
+        } catch (IOException ignored) {}
 
-        // Xóa destination
         destinationRepository.delete(destination);
     }
 
-    public List<DestinationListDto> getAllDestinations() {
+    /**
+     * Tìm kiếm địa điểm với filter và phân trang — dùng cho public API.
+     * Chỉ trả về ACTIVE destinations.
+     */
+    public ApiResponse<PageResponse<DestinationListDto>> getDestinations(
+            String keyword, Long categoryId, String province,
+            String sortBy, String sortDir, int page, int size) {
+
+        log.info("getDestinations - keyword: {}, categoryId: {}, province: {}, sortBy: {}, sortDir: {}, page: {}, size: {}",
+                keyword, categoryId, province, sortBy, sortDir, page, size);
+
+        // Validate sortBy để tránh injection
+        String safeSortBy = List.of("createdAt", "viewCount", "name").contains(sortBy) ? sortBy : "createdAt";
+        Sort sort = "asc".equalsIgnoreCase(sortDir)
+                ? Sort.by(safeSortBy).ascending()
+                : Sort.by(safeSortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        String kw = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        String prov = StringUtils.hasText(province) ? province.trim() : null;
+
+        Page<Destination> resultPage = destinationRepository.findWithFilters(kw, categoryId, prov, pageable);
+        PageResponse<DestinationListDto> pageResponse = PageResponse.from(resultPage, this::mapToListDto);
+
+        return ApiResponse.ok("OK", pageResponse);
+    }
+
+    /**
+     * Lấy tất cả destinations — dùng cho admin panel (không filter status).
+     * Nếu province được cung cấp, lọc theo province (không phân biệt hoa thường).
+     */
+    public List<DestinationListDto> getAllDestinations(String province) {
+        if (StringUtils.hasText(province)) {
+            return destinationRepository.findByProvinceContainingIgnoreCase(province.trim())
+                    .stream()
+                    .map(this::mapToListDto)
+                    .collect(Collectors.toList());
+        }
         return destinationRepository.findAll().stream()
                 .map(this::mapToListDto)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lấy tất cả destinations — dùng cho admin panel (không filter status).
+     * @deprecated Dùng {@link #getAllDestinations(String)} thay thế.
+     */
+    @Deprecated
+    public List<DestinationListDto> getAllDestinations() {
+        return getAllDestinations(null);
+    }
+
     public CreateDestinationResponse getDestinationById(Long id) {
         Destination destination = destinationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Địa điểm không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Địa điểm", id));
         return mapToResponse(destination);
     }
 
@@ -200,83 +232,8 @@ public class DestinationService {
                 .collect(Collectors.toList());
     }
 
-    private void validateCreateRequest(CreateDestinationRequest request) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            throw new RuntimeException("Tên địa điểm không được để trống");
-        }
-        if (request.getSlug() == null || request.getSlug().trim().isEmpty()) {
-            throw new RuntimeException("Slug không được để trống");
-        }
-        if (request.getShortDescription() == null || request.getShortDescription().trim().isEmpty()) {
-            throw new RuntimeException("Mô tả ngắn không được để trống");
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            throw new RuntimeException("Mô tả chi tiết không được để trống");
-        }
-        if (request.getProvince() == null || request.getProvince().trim().isEmpty()) {
-            throw new RuntimeException("Tỉnh/thành không được để trống");
-        }
-        if (request.getCategoryId() == null) {
-            throw new RuntimeException("Danh mục không được để trống");
-        }
-        if (request.getThumbnail() == null || request.getThumbnail().isEmpty()) {
-            throw new RuntimeException("Ảnh thumbnail là bắt buộc");
-        }
-        if (!isValidImageFile(request.getThumbnail())) {
-            throw new RuntimeException("Thumbnail phải là file ảnh hợp lệ (jpg, jpeg, png, webp)");
-        }
-        if (request.getImages() != null) {
-            for (MultipartFile image : request.getImages()) {
-                if (image != null && !image.isEmpty() && !isValidImageFile(image)) {
-                    throw new RuntimeException("Các file ảnh phải là ảnh hợp lệ (jpg, jpeg, png, webp)");
-                }
-            }
-        }
-    }
-
-    private void validateUpdateRequest(UpdateDestinationRequest request) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            throw new RuntimeException("Tên địa điểm không được để trống");
-        }
-        if (request.getSlug() == null || request.getSlug().trim().isEmpty()) {
-            throw new RuntimeException("Slug không được để trống");
-        }
-        if (request.getShortDescription() == null || request.getShortDescription().trim().isEmpty()) {
-            throw new RuntimeException("Mô tả ngắn không được để trống");
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            throw new RuntimeException("Mô tả chi tiết không được để trống");
-        }
-        if (request.getProvince() == null || request.getProvince().trim().isEmpty()) {
-            throw new RuntimeException("Tỉnh/thành không được để trống");
-        }
-        if (request.getCategoryId() == null) {
-            throw new RuntimeException("Danh mục không được để trống");
-        }
-        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty() && !isValidImageFile(request.getThumbnail())) {
-            throw new RuntimeException("Thumbnail phải là file ảnh hợp lệ (jpg, jpeg, png, webp)");
-        }
-        if (request.getImages() != null) {
-            for (MultipartFile image : request.getImages()) {
-                if (image != null && !image.isEmpty() && !isValidImageFile(image)) {
-                    throw new RuntimeException("Các file ảnh phải là ảnh hợp lệ (jpg, jpeg, png, webp)");
-                }
-            }
-        }
-    }
-
-    private boolean isValidImageFile(MultipartFile file) {
-        String contentType = file.getContentType();
-        return contentType != null && (
-                contentType.equals("image/jpeg") ||
-                contentType.equals("image/png") ||
-                contentType.equals("image/webp") ||
-                contentType.equals("image/jpg")
-        );
-    }
-
     private CreateDestinationResponse mapToResponse(Destination destination) {
-        List<DestinationImage> images = destinationImageRepository.findByDestinationIdOrderBySortOrder(destination.getId());
+        List<Image> images = imageRepository.findByTargetTypeAndTargetIdOrderBySortOrder(TARGET_TYPE, destination.getId());
         List<DestinationImageDto> imageDtos = images.stream()
                 .map(img -> new DestinationImageDto(img.getId(), img.getImageUrl(), img.getCaption(), img.getSortOrder()))
                 .collect(Collectors.toList());
@@ -303,8 +260,42 @@ public class DestinationService {
                 destination.getSlug(),
                 destination.getProvince(),
                 destination.getThumbnail(),
-                destination.getCategory().getName(),
-                destination.getStatus()
+                destination.getCategory() != null ? destination.getCategory().getName() : null,
+                destination.getStatus(),
+                destination.getViewCount()
         );
+    }
+
+    private void validateCreateRequest(CreateDestinationRequest request) {
+        if (request.getName() == null || request.getName().isBlank()) throw new BadRequestException("Tên địa điểm không được để trống");
+        if (request.getSlug() == null || request.getSlug().isBlank()) throw new BadRequestException("Slug không được để trống");
+        if (request.getShortDescription() == null || request.getShortDescription().isBlank()) throw new BadRequestException("Mô tả ngắn không được để trống");
+        if (request.getDescription() == null || request.getDescription().isBlank()) throw new BadRequestException("Mô tả chi tiết không được để trống");
+        if (request.getProvince() == null || request.getProvince().isBlank()) throw new BadRequestException("Tỉnh/thành không được để trống");
+        if (request.getCategoryId() == null) throw new BadRequestException("Danh mục không được để trống");
+        if (request.getThumbnail() == null || request.getThumbnail().isEmpty()) throw new BadRequestException("Ảnh thumbnail là bắt buộc");
+        if (!isValidImageFile(request.getThumbnail())) throw new BadRequestException("Thumbnail phải là file ảnh hợp lệ");
+        if (request.getImages() != null)
+            for (MultipartFile f : request.getImages())
+                if (f != null && !f.isEmpty() && !isValidImageFile(f)) throw new BadRequestException("File ảnh không hợp lệ");
+    }
+
+    private void validateUpdateRequest(UpdateDestinationRequest request) {
+        if (request.getName() == null || request.getName().isBlank()) throw new BadRequestException("Tên địa điểm không được để trống");
+        if (request.getSlug() == null || request.getSlug().isBlank()) throw new BadRequestException("Slug không được để trống");
+        if (request.getShortDescription() == null || request.getShortDescription().isBlank()) throw new BadRequestException("Mô tả ngắn không được để trống");
+        if (request.getDescription() == null || request.getDescription().isBlank()) throw new BadRequestException("Mô tả chi tiết không được để trống");
+        if (request.getProvince() == null || request.getProvince().isBlank()) throw new BadRequestException("Tỉnh/thành không được để trống");
+        if (request.getCategoryId() == null) throw new BadRequestException("Danh mục không được để trống");
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty() && !isValidImageFile(request.getThumbnail()))
+            throw new BadRequestException("Thumbnail phải là file ảnh hợp lệ");
+        if (request.getImages() != null)
+            for (MultipartFile f : request.getImages())
+                if (f != null && !f.isEmpty() && !isValidImageFile(f)) throw new BadRequestException("File ảnh không hợp lệ");
+    }
+
+    private boolean isValidImageFile(MultipartFile file) {
+        String ct = file.getContentType();
+        return ct != null && (ct.equals("image/jpeg") || ct.equals("image/png") || ct.equals("image/webp") || ct.equals("image/jpg"));
     }
 }

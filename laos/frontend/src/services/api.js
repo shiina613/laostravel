@@ -29,6 +29,8 @@ export const authService = {
 
 export const userService = {
   getProfile: () => api.get('/user/profile'),
+  updateProfile: (data) => api.put('/user/profile', data),
+  changePassword: (data) => api.put('/user/change-password', data),
 };
 
 export const categoryService = {
@@ -36,10 +38,21 @@ export const categoryService = {
 };
 
 export const publicService = {
-  getDestinations: (limit = 100) => api.get(`/destinations?limit=${limit}`),
+  // Hỗ trợ params object: { keyword, categoryId, province, sortBy, sortDir, page, size }
+  getDestinations: (params) => api.get('/destinations', { params }),
   getDestinationBySlug: (slug) => api.get(`/destinations/${slug}`),
-  getFestivals: (limit = 6) => api.get(`/festivals?limit=${limit}`),
-  getArticles: (limit = 3) => api.get(`/articles?limit=${limit}`),
+  getDestinationProvinces: () => api.get('/destinations/provinces'),
+  getFestivals: (params) => api.get('/festivals', { params }),
+  getFestivalBySlug: (slug) => api.get(`/festivals/${slug}`),
+  // Hỗ trợ params object: { page, size }
+  getArticles: (params) => api.get('/articles', { params }),
+  getArticleBySlug: (slug) => api.get(`/articles/${slug}`),
+};
+
+export const reviewService = {
+  getReviews: (targetType, targetId) => api.get(`/reviews/${targetType}/${targetId}`),
+  submitReview: (targetType, targetId, data) => api.post(`/reviews/${targetType}/${targetId}`, data),
+  deleteReview: (id) => api.delete(`/reviews/${id}`),
 };
 
 export const adminService = {
@@ -49,7 +62,7 @@ export const adminService = {
       'Content-Type': 'multipart/form-data'
     }
   }),
-  getAllDestinations: () => api.get('/admin/destinations'),
+  getAllDestinations: (params) => api.get('/admin/destinations', { params }),
   getDestinationById: (id) => api.get(`/admin/destinations/${id}`),
   updateDestination: (id, formData) => api.put(`/admin/destinations/${id}`, formData, {
     headers: {
@@ -63,6 +76,31 @@ export const adminService = {
   getCategoryById: (id) => api.get(`/admin/categories/${id}`),
   updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
   deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
+
+  // Festival
+  createFestival: (formData) => api.post('/admin/festivals', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getAllFestivals: (params) => api.get('/admin/festivals', { params }),
+  getFestivalById: (id) => api.get(`/admin/festivals/${id}`),
+  updateFestival: (id, formData) => api.put(`/admin/festivals/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deleteFestival: (id) => api.delete(`/admin/festivals/${id}`),
+
+  // Article
+  createArticle: (formData) => api.post('/admin/articles', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getAllArticles: (params) => api.get('/admin/articles', { params }),
+  getArticleById: (id) => api.get(`/admin/articles/${id}`),
+  updateArticle: (id, formData) => api.put(`/admin/articles/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deleteArticle: (id) => api.delete(`/admin/articles/${id}`),
+
+  // Users
+  getAllUsers: () => api.get('/admin/users'),
+  updateUserStatus: (id, status) => api.put(`/admin/users/${id}/status`, { status }),
+
+  // Reviews
+  getAllReviews: (params) => api.get('/admin/reviews', { params }),
+  deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
+
+  // Provinces
+  getProvinces: () => api.get('/admin/provinces'),
 };
 
 export default api;

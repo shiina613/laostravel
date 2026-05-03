@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService, imgUrl } from '../services/api';
 import AdminLayout from '../components/AdminLayout';
@@ -6,21 +6,35 @@ import AdminLayout from '../components/AdminLayout';
 const AdminDestinations = () => {
   const navigate = useNavigate();
   const [destinations, setDestinations] = useState([]);
+  const [provinces, setProvinces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [provinceFilter, setProvinceFilter] = useState('');
 
-  // Fetch destinations
+  // Load provinces on mount
   useEffect(() => {
-    fetchDestinations();
+    adminService.getProvinces()
+      .then(res => {
+        const data = res.data;
+        if (data && Array.isArray(data.data)) {
+          setProvinces(data.data);
+        } else if (Array.isArray(data)) {
+          setProvinces(data);
+        }
+      })
+      .catch(err => console.error('Lỗi khi tải danh sách tỉnh/thành', err));
   }, []);
 
-  const fetchDestinations = async () => {
+  // Fetch destinations
+  const fetchDestinations = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await adminService.getAllDestinations();
+      const params = {};
+      if (provinceFilter) params.province = provinceFilter;
+      const response = await adminService.getAllDestinations(params);
       setDestinations(response.data);
       setError('');
     } catch (err) {
@@ -29,7 +43,11 @@ const AdminDestinations = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [provinceFilter]);
+
+  useEffect(() => {
+    fetchDestinations();
+  }, [fetchDestinations]);
 
   const handleDeleteClick = (id) => {
     setDeleteConfirm(id);
@@ -65,17 +83,29 @@ const AdminDestinations = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="relative flex-1 max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Tìm kiếm địa điểm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            />
+          <div className="flex items-center gap-3 flex-1">
+            <div className="relative flex-1 max-w-sm">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Tìm kiếm địa điểm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              />
+            </div>
+            <select
+              value={provinceFilter}
+              onChange={(e) => setProvinceFilter(e.target.value)}
+              className="border border-gray-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option value="">Tất cả tỉnh/thành</option>
+              {provinces.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
           </div>
           <button
             onClick={() => navigate('/admin/destinations/create')}
@@ -180,8 +210,8 @@ const AdminDestinations = () => {
             <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             </svg>
-            <p className="text-gray-500 mb-4">{searchTerm ? 'Không tìm thấy địa điểm nào' : 'Chưa có địa điểm nào'}</p>
-            {!searchTerm && (
+            <p className="text-gray-500 mb-4">{searchTerm || provinceFilter ? 'Không tìm thấy địa điểm nào' : 'Chưa có địa điểm nào'}</p>
+            {!searchTerm && !provinceFilter && (
               <button onClick={() => navigate('/admin/destinations/create')} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 Tạo địa điểm đầu tiên
               </button>

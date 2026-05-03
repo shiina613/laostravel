@@ -14,6 +14,12 @@ public class FileStorageService {
     @Value("${file.upload-dir:uploads/destinations}")
     private String uploadDir;
 
+    @Value("${file.upload-dir-festivals:uploads/festivals}")
+    private String festivalUploadDir;
+
+    @Value("${file.upload-dir-articles:uploads/articles}")
+    private String articleUploadDir;
+
     public String saveDestinationThumbnail(Long destinationId, MultipartFile file) throws IOException {
         String fileName = "thumbnail-" + UUID.randomUUID() + getFileExtension(file.getOriginalFilename());
         return saveFile(destinationId, file, fileName);
@@ -49,6 +55,46 @@ public class FileStorageService {
     public void deleteFile(String filePath) {
         try {
             Path path = Paths.get(filePath.replace("/uploads/destinations/", uploadDir + "/"));
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            // Log error but don't throw
+        }
+    }
+
+    public String saveFestivalThumbnail(Long festivalId, MultipartFile file) throws IOException {
+        String fileName = "thumbnail-" + UUID.randomUUID() + getFileExtension(file.getOriginalFilename());
+        Path festivalPath = Paths.get(festivalUploadDir, festivalId.toString());
+        if (!Files.exists(festivalPath)) {
+            Files.createDirectories(festivalPath);
+        }
+        Path filePath = festivalPath.resolve(fileName);
+        Files.copy(file.getInputStream(), filePath);
+        return "/uploads/festivals/" + festivalId + "/" + fileName;
+    }
+
+    public void deleteFestivalFile(String filePath) {
+        try {
+            Path path = Paths.get(filePath.replace("/uploads/festivals/", festivalUploadDir + "/"));
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            // Log error but don't throw
+        }
+    }
+
+    public String saveArticleThumbnail(Long articleId, MultipartFile file) throws IOException {
+        String fileName = "thumbnail-" + UUID.randomUUID() + getFileExtension(file.getOriginalFilename());
+        Path articlePath = Paths.get(articleUploadDir, articleId.toString());
+        if (!Files.exists(articlePath)) {
+            Files.createDirectories(articlePath);
+        }
+        Path filePath = articlePath.resolve(fileName);
+        Files.copy(file.getInputStream(), filePath);
+        return "/uploads/articles/" + articleId + "/" + fileName;
+    }
+
+    public void deleteArticleFile(String filePath) {
+        try {
+            Path path = Paths.get(filePath.replace("/uploads/articles/", articleUploadDir + "/"));
             Files.deleteIfExists(path);
         } catch (IOException e) {
             // Log error but don't throw
