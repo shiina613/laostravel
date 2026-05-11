@@ -42,6 +42,7 @@ export const publicService = {
   getDestinations: (params) => api.get('/destinations', { params }),
   getDestinationBySlug: (slug) => api.get(`/destinations/${slug}`),
   getDestinationProvinces: () => api.get('/destinations/provinces'),
+  getDestinationRegions: () => api.get('/destinations/regions'),
   getFestivals: (params) => api.get('/festivals', { params }),
   getFestivalBySlug: (slug) => api.get(`/festivals/${slug}`),
   // Hỗ trợ params object: { page, size }
@@ -70,6 +71,7 @@ export const adminService = {
     }
   }),
   deleteDestination: (id) => api.delete(`/admin/destinations/${id}`),
+  deleteDestinationImage: (imageId) => api.delete(`/admin/destinations/images/${imageId}`),
   getCategories: () => api.get('/admin/destinations/categories'),
   createCategory: (data) => api.post('/admin/categories', data),
   getAllCategories: () => api.get('/admin/categories'),

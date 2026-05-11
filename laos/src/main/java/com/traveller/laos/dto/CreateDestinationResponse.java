@@ -16,6 +16,7 @@ public class CreateDestinationResponse {
     private String shortDescription;
     private String description;
     private String province;
+    private String region;
     private String thumbnail;
     private Long categoryId;
     private String status;

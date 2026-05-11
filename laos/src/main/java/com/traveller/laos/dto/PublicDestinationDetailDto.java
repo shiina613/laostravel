@@ -15,6 +15,7 @@ public class PublicDestinationDetailDto {
     private String shortDescription;
     private String description;
     private String province;
+    private String region;
     private String thumbnail;
     private String categoryName;
     private List<String> images;

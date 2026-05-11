@@ -31,6 +31,9 @@ public class Destination {
     @Column(length = 100)
     private String province;
 
+    @Column(length = 20)
+    private String region;
+
     @Column(length = 255)
     private String thumbnail;
 

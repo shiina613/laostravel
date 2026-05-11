@@ -14,6 +14,7 @@ public class UpdateDestinationRequest {
     private String shortDescription;
     private String description;
     private String province;
+    private String region;
     private Long categoryId;
     private String status;
     private MultipartFile thumbnail;

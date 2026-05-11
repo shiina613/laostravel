@@ -12,6 +12,7 @@ public class DestinationListDto {
     private String name;
     private String slug;
     private String province;
+    private String region;
     private String thumbnail;
     private String categoryName;
     private String status;

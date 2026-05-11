@@ -48,12 +48,24 @@ public class DestinationController {
     }
 
     /**
+     * GET /api/destinations/regions
+     * Lấy danh sách miền duy nhất từ destinations ACTIVE.
+     */
+    @GetMapping("/regions")
+    public ResponseEntity<ApiResponse<List<String>>> getRegions() {
+        log.info("GET /api/destinations/regions");
+        List<String> regions = destinationRepository.findDistinctActiveRegions();
+        return ResponseEntity.ok(ApiResponse.ok("OK", regions));
+    }
+
+    /**
      * GET /api/destinations
      * Tìm kiếm, lọc và phân trang địa điểm (chỉ ACTIVE).
      *
      * @param keyword   tìm theo tên (optional)
      * @param categoryId lọc theo danh mục (optional)
      * @param province  lọc theo tỉnh/thành (optional)
+     * @param region    lọc theo miền: MIEN_BAC, MIEN_TRUNG, MIEN_NAM (optional)
      * @param sortBy    sắp xếp theo: createdAt (default), viewCount, name
      * @param sortDir   asc hoặc desc (default: desc)
      * @param page      số trang, mặc định 0
@@ -64,14 +76,15 @@ public class DestinationController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String province,
+            @RequestParam(required = false) String region,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        log.info("GET /api/destinations - keyword: {}, categoryId: {}, province: {}, sortBy: {}, page: {}, size: {}",
-                keyword, categoryId, province, sortBy, page, size);
+        log.info("GET /api/destinations - keyword: {}, categoryId: {}, province: {}, region: {}, sortBy: {}, page: {}, size: {}",
+                keyword, categoryId, province, region, sortBy, page, size);
         ApiResponse<PageResponse<DestinationListDto>> response =
-                destinationService.getDestinations(keyword, categoryId, province, sortBy, sortDir, page, size);
+                destinationService.getDestinations(keyword, categoryId, province, region, sortBy, sortDir, page, size);
         return ResponseEntity.ok(response);
     }
 
@@ -106,6 +119,7 @@ public class DestinationController {
                 d.getShortDescription(),
                 d.getDescription(),
                 d.getProvince(),
+                d.getRegion(),
                 d.getThumbnail(),
                 d.getCategory() != null ? d.getCategory().getName() : null,
                 imageUrls

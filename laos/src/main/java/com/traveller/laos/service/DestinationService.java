@@ -70,6 +70,7 @@ public class DestinationService {
         destination.setShortDescription(request.getShortDescription());
         destination.setDescription(request.getDescription());
         destination.setProvince(request.getProvince());
+        destination.setRegion(request.getRegion());
         destination.setCategory(category);
         destination.setStatus(request.getStatus() != null ? request.getStatus() : "ACTIVE");
         destination = destinationRepository.save(destination);
@@ -120,6 +121,7 @@ public class DestinationService {
         destination.setShortDescription(request.getShortDescription());
         destination.setDescription(request.getDescription());
         destination.setProvince(request.getProvince());
+        destination.setRegion(request.getRegion());
         destination.setCategory(category);
         destination.setStatus(request.getStatus() != null ? request.getStatus() : "ACTIVE");
 
@@ -169,15 +171,30 @@ public class DestinationService {
     }
 
     /**
+     * Xóa một ảnh phụ theo ID — dùng cho admin.
+     */
+    @Transactional
+    public void deleteDestinationImage(Long imageId) {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ảnh", imageId));
+
+        // Xóa file vật lý
+        fileStorageService.deleteFile(image.getImageUrl());
+
+        // Xóa record trong DB
+        imageRepository.delete(image);
+    }
+
+    /**
      * Tìm kiếm địa điểm với filter và phân trang — dùng cho public API.
      * Chỉ trả về ACTIVE destinations.
      */
     public ApiResponse<PageResponse<DestinationListDto>> getDestinations(
-            String keyword, Long categoryId, String province,
+            String keyword, Long categoryId, String province, String region,
             String sortBy, String sortDir, int page, int size) {
 
-        log.info("getDestinations - keyword: {}, categoryId: {}, province: {}, sortBy: {}, sortDir: {}, page: {}, size: {}",
-                keyword, categoryId, province, sortBy, sortDir, page, size);
+        log.info("getDestinations - keyword: {}, categoryId: {}, province: {}, region: {}, sortBy: {}, sortDir: {}, page: {}, size: {}",
+                keyword, categoryId, province, region, sortBy, sortDir, page, size);
 
         // Validate sortBy để tránh injection
         String safeSortBy = List.of("createdAt", "viewCount", "name").contains(sortBy) ? sortBy : "createdAt";
@@ -188,8 +205,9 @@ public class DestinationService {
 
         String kw = StringUtils.hasText(keyword) ? keyword.trim() : null;
         String prov = StringUtils.hasText(province) ? province.trim() : null;
+        String reg = StringUtils.hasText(region) ? region.trim() : null;
 
-        Page<Destination> resultPage = destinationRepository.findWithFilters(kw, categoryId, prov, pageable);
+        Page<Destination> resultPage = destinationRepository.findWithFilters(kw, categoryId, prov, reg, pageable);
         PageResponse<DestinationListDto> pageResponse = PageResponse.from(resultPage, this::mapToListDto);
 
         return ApiResponse.ok("OK", pageResponse);
@@ -245,6 +263,7 @@ public class DestinationService {
         response.setShortDescription(destination.getShortDescription());
         response.setDescription(destination.getDescription());
         response.setProvince(destination.getProvince());
+        response.setRegion(destination.getRegion());
         response.setThumbnail(destination.getThumbnail());
         response.setCategoryId(destination.getCategory().getId());
         response.setStatus(destination.getStatus());
@@ -259,6 +278,7 @@ public class DestinationService {
                 destination.getName(),
                 destination.getSlug(),
                 destination.getProvince(),
+                destination.getRegion(),
                 destination.getThumbnail(),
                 destination.getCategory() != null ? destination.getCategory().getName() : null,
                 destination.getStatus(),

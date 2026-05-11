@@ -8,6 +8,7 @@ const DestinationForm = ({
   formData, onInputChange,
   thumbnail, thumbnailPreview, onThumbnailChange,
   images, imagePreviews, onImagesChange, onRemoveImage,
+  existingImages, onRemoveExistingImage,
   categories, loading, onSubmit, onCancel, submitLabel
 }) => (
   <form onSubmit={onSubmit} className="space-y-5">
@@ -32,10 +33,19 @@ const DestinationForm = ({
       <textarea name="description" value={formData.description} onChange={onInputChange} rows="5" className={`${inputCls} resize-none`} required />
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
       <div>
         <label className={labelCls}>Tỉnh/Thành <span className="text-red-500">*</span></label>
         <input type="text" name="province" value={formData.province} onChange={onInputChange} className={inputCls} required />
+      </div>
+      <div>
+        <label className={labelCls}>Miền <span className="text-red-500">*</span></label>
+        <select name="region" value={formData.region} onChange={onInputChange} className={inputCls} required>
+          <option value="">-- Chọn miền --</option>
+          <option value="MIEN_BAC">Miền Bắc</option>
+          <option value="MIEN_TRUNG">Miền Trung</option>
+          <option value="MIEN_NAM">Miền Nam</option>
+        </select>
       </div>
       <div>
         <label className={labelCls}>Danh mục <span className="text-red-500">*</span></label>
@@ -68,9 +78,34 @@ const DestinationForm = ({
       )}
     </div>
 
-    {/* Extra images */}
+    {/* Existing images (only shown when editing) */}
+    {existingImages && existingImages.length > 0 && (
+      <div>
+        <label className={labelCls}>Ảnh phụ hiện tại ({existingImages.length} ảnh)</label>
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+          {existingImages.map((img) => (
+            <div key={img.id} className="relative group">
+              <img src={imgUrl(img.imageUrl)} alt={img.caption || `Ảnh ${img.id}`} className="h-24 w-full object-cover rounded-lg border border-gray-200" />
+              {onRemoveExistingImage && (
+                <button
+                  type="button" onClick={() => onRemoveExistingImage(img.id)}
+                  className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  title="Xóa ảnh này"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* Extra images (new upload) */}
     <div>
-      <label className={labelCls}>Ảnh phụ</label>
+      <label className={labelCls}>Thêm ảnh phụ mới</label>
       <label className="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-emerald-400 transition-colors">
         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
         <span className="text-sm text-gray-500">Chọn nhiều ảnh...</span>

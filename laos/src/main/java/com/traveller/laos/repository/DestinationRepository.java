@@ -19,7 +19,7 @@ public interface DestinationRepository extends JpaRepository<Destination, Long> 
     List<Destination> findTop5ByOrderByViewCountDesc();
 
     /**
-     * Tìm kiếm địa điểm với filter tùy chọn: keyword (name), categoryId, province.
+     * Tìm kiếm địa điểm với filter tùy chọn: keyword (name), categoryId, province, region.
      * Chỉ trả về các địa điểm có status = 'ACTIVE'.
      */
     @Query("""
@@ -28,11 +28,13 @@ public interface DestinationRepository extends JpaRepository<Destination, Long> 
           AND (:keyword IS NULL OR LOWER(d.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
           AND (:categoryId IS NULL OR d.category.id = :categoryId)
           AND (:province IS NULL OR LOWER(d.province) LIKE LOWER(CONCAT('%', :province, '%')))
+          AND (:region IS NULL OR d.region = :region)
         """)
     Page<Destination> findWithFilters(
             @Param("keyword") String keyword,
             @Param("categoryId") Long categoryId,
             @Param("province") String province,
+            @Param("region") String region,
             Pageable pageable);
 
     /**
@@ -40,6 +42,12 @@ public interface DestinationRepository extends JpaRepository<Destination, Long> 
      */
     @Query("SELECT DISTINCT d.province FROM Destination d WHERE d.status = 'ACTIVE' AND d.province IS NOT NULL ORDER BY d.province")
     List<String> findDistinctActiveProvinces();
+
+    /**
+     * Lấy danh sách region duy nhất từ destinations (ACTIVE) — dùng cho public.
+     */
+    @Query("SELECT DISTINCT d.region FROM Destination d WHERE d.status = 'ACTIVE' AND d.region IS NOT NULL ORDER BY d.region")
+    List<String> findDistinctActiveRegions();
 
     /**
      * Lấy danh sách province duy nhất từ tất cả destinations (bao gồm INACTIVE) — dùng cho admin.
@@ -52,3 +60,4 @@ public interface DestinationRepository extends JpaRepository<Destination, Long> 
      */
     List<Destination> findByProvinceContainingIgnoreCase(String province);
 }
+

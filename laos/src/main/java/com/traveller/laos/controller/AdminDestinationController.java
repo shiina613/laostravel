@@ -29,6 +29,7 @@ public class AdminDestinationController {
             @RequestParam String shortDescription,
             @RequestParam String description,
             @RequestParam String province,
+            @RequestParam(required = false) String region,
             @RequestParam Long categoryId,
             @RequestParam(required = false) String status,
             @RequestParam MultipartFile thumbnail,
@@ -40,6 +41,7 @@ public class AdminDestinationController {
             request.setShortDescription(shortDescription);
             request.setDescription(description);
             request.setProvince(province);
+            request.setRegion(region);
             request.setCategoryId(categoryId);
             request.setStatus(status);
             request.setThumbnail(thumbnail);
@@ -90,6 +92,19 @@ public class AdminDestinationController {
             });
         }
     }
+    @DeleteMapping("/images/{imageId}")
+    public ResponseEntity<?> deleteDestinationImage(@PathVariable Long imageId) {
+        try {
+            destinationService.deleteDestinationImage(imageId);
+            return ResponseEntity.ok(new Object() {
+                public String message = "Xóa ảnh thành công";
+            });
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new Object() {
+                public String message = e.getMessage();
+            });
+        }
+    }
     @PutMapping("/{id}")
     public ResponseEntity<?> updateDestination(
             @PathVariable Long id,
@@ -98,6 +113,7 @@ public class AdminDestinationController {
             @RequestParam String shortDescription,
             @RequestParam String description,
             @RequestParam String province,
+            @RequestParam(required = false) String region,
             @RequestParam Long categoryId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) MultipartFile thumbnail,
@@ -109,6 +125,7 @@ public class AdminDestinationController {
             request.setShortDescription(shortDescription);
             request.setDescription(description);
             request.setProvince(province);
+            request.setRegion(region);
             request.setCategoryId(categoryId);
             request.setStatus(status);
             request.setThumbnail(thumbnail);

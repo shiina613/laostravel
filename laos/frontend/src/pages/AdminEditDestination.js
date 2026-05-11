@@ -11,11 +11,12 @@ const AdminEditDestination = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [formData, setFormData] = useState({ name: '', slug: '', shortDescription: '', description: '', province: '', categoryId: '', status: 'ACTIVE' });
+  const [formData, setFormData] = useState({ name: '', slug: '', shortDescription: '', description: '', province: '', region: '', categoryId: '', status: 'ACTIVE' });
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,8 +28,9 @@ const AdminEditDestination = () => {
         ]);
         setCategories(catsRes.data);
         const d = destRes.data;
-        setFormData({ name: d.name, slug: d.slug, shortDescription: d.shortDescription, description: d.description, province: d.province, categoryId: d.categoryId, status: d.status });
+        setFormData({ name: d.name, slug: d.slug, shortDescription: d.shortDescription, description: d.description, province: d.province, region: d.region || '', categoryId: d.categoryId, status: d.status });
         if (d.thumbnail) setThumbnailPreview(d.thumbnail);
+        if (d.images && d.images.length > 0) setExistingImages(d.images);
       } catch (err) {
         setError('Lỗi khi tải dữ liệu');
       } finally {
@@ -69,6 +71,19 @@ const AdminEditDestination = () => {
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
     setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExistingImage = async (imageId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa ảnh này? Hành động này không thể hoàn tác.')) return;
+    try {
+      await adminService.deleteDestinationImage(imageId);
+      setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      setSuccess('Xóa ảnh thành công!');
+      setTimeout(() => setSuccess(''), 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi xóa ảnh');
+      setTimeout(() => setError(''), 3000);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -127,6 +142,7 @@ const AdminEditDestination = () => {
             formData={formData} onInputChange={handleInputChange}
             thumbnail={thumbnail} thumbnailPreview={thumbnailPreview} onThumbnailChange={handleThumbnailChange}
             images={images} imagePreviews={imagePreviews} onImagesChange={handleImagesChange} onRemoveImage={removeImage}
+            existingImages={existingImages} onRemoveExistingImage={handleRemoveExistingImage}
             categories={categories} loading={loading}
             onSubmit={handleSubmit} onCancel={() => navigate('/admin/destinations')}
             submitLabel="Lưu thay đổi"

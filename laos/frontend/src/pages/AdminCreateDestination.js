@@ -10,7 +10,7 @@ const AdminCreateDestination = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [formData, setFormData] = useState({ name: '', slug: '', shortDescription: '', description: '', province: '', categoryId: '', status: 'ACTIVE' });
+  const [formData, setFormData] = useState({ name: '', slug: '', shortDescription: '', description: '', province: '', region: '', categoryId: '', status: 'ACTIVE' });
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [images, setImages] = useState([]);

@@ -5,6 +5,12 @@ import Footer from '../components/Footer';
 import Pagination from '../components/Pagination';
 import { publicService, categoryService, imgUrl } from '../services/api';
 
+const REGION_LABELS = {
+  MIEN_BAC: 'Miền Bắc',
+  MIEN_TRUNG: 'Miền Trung',
+  MIEN_NAM: 'Miền Nam',
+};
+
 const SORT_OPTIONS = [
   { value: 'createdAt_desc', label: 'Mới nhất' },
   { value: 'viewCount_desc', label: 'Nhiều lượt xem nhất' },
@@ -18,12 +24,14 @@ const DestinationsPage = () => {
   const [destinations, setDestinations] = useState([]);
   const [categories, setCategories] = useState([]);
   const [provinces, setProvinces] = useState([]);
+  const [regions, setRegions] = useState([]);
 
   // Filter state
   const [keyword, setKeyword] = useState('');
   const [inputKeyword, setInputKeyword] = useState(''); // debounced input
   const [categoryId, setCategoryId] = useState('');
   const [province, setProvince] = useState('');
+  const [region, setRegion] = useState('');
   const [sort, setSort] = useState('createdAt_desc');
 
   // Pagination state
@@ -36,7 +44,7 @@ const DestinationsPage = () => {
 
   const debounceRef = useRef(null);
 
-  // Load categories và provinces một lần
+  // Load categories, provinces và regions một lần
   useEffect(() => {
     categoryService.getAll()
       .then(res => setCategories(res.data || []))
@@ -46,6 +54,11 @@ const DestinationsPage = () => {
     publicService.getDestinationProvinces()
       .then(res => setProvinces(res.data?.data || []))
       .catch(() => setProvinces([]));
+
+    // Lấy regions từ destinations
+    publicService.getDestinationRegions()
+      .then(res => setRegions(res.data?.data || []))
+      .catch(() => setRegions([]));
   }, []);
 
   // Debounce keyword input
@@ -72,6 +85,7 @@ const DestinationsPage = () => {
       if (keyword) params.keyword = keyword;
       if (categoryId) params.categoryId = categoryId;
       if (province) params.province = province;
+      if (region) params.region = region;
 
       const res = await publicService.getDestinations(params);
       const data = res.data?.data;
@@ -84,12 +98,12 @@ const DestinationsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [keyword, categoryId, province, sort]);
+  }, [keyword, categoryId, province, region, sort]);
 
   useEffect(() => {
     fetchDestinations(currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword, categoryId, province, sort]);
+  }, [keyword, categoryId, province, region, sort]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -107,6 +121,11 @@ const DestinationsPage = () => {
     setCurrentPage(0);
   };
 
+  const handleRegionChange = (e) => {
+    setRegion(e.target.value);
+    setCurrentPage(0);
+  };
+
   const handleSortChange = (e) => {
     setSort(e.target.value);
     setCurrentPage(0);
@@ -117,11 +136,12 @@ const DestinationsPage = () => {
     setKeyword('');
     setCategoryId('');
     setProvince('');
+    setRegion('');
     setSort('createdAt_desc');
     setCurrentPage(0);
   };
 
-  const hasActiveFilter = keyword || categoryId || province || sort !== 'createdAt_desc';
+  const hasActiveFilter = keyword || categoryId || province || region || sort !== 'createdAt_desc';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -199,6 +219,18 @@ const DestinationsPage = () => {
             <option value="">Tất cả tỉnh/thành</option>
             {provinces.map(p => (
               <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+
+          {/* Region dropdown */}
+          <select
+            value={region}
+            onChange={handleRegionChange}
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+          >
+            <option value="">Tất cả miền</option>
+            {regions.map(r => (
+              <option key={r} value={r}>{REGION_LABELS[r] || r}</option>
             ))}
           </select>
 

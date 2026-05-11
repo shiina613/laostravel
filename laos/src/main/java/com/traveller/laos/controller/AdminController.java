@@ -97,6 +97,7 @@ public class AdminController {
                 destination.getName(),
                 destination.getSlug(),
                 destination.getProvince(),
+                destination.getRegion(),
                 destination.getThumbnail(),
                 destination.getCategory() != null ? destination.getCategory().getName() : null,
                 destination.getStatus(),
